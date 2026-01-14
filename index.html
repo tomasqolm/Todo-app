@@ -26,6 +26,7 @@
       const [showStats, setShowStats] = useState(false);
       const [showCalendar, setShowCalendar] = useState(false);
       const [showPizzaReview, setShowPizzaReview] = useState(false);
+      const [showCompleted, setShowCompleted] = useState(true);
       const [pizzaReviewDate, setPizzaReviewDate] = useState(null);
       const [editingPizzaDate, setEditingPizzaDate] = useState(false);
       const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -1482,15 +1483,25 @@
 
                   {todos.filter(t => t.completed).length > 0 && (
                     <div className="pt-6 border-t-2" style={{ borderColor: '#f0f3fc' }}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                        <h2 className="text-xl font-bold" style={{ color: '#7C799A' }}>
-                          Dokončené
-                        </h2>
+                      <div 
+                        className="flex items-center justify-between mb-4 cursor-pointer hover:opacity-80 transition-all"
+                        onClick={() => setShowCompleted(!showCompleted)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <h2 className="text-xl font-bold" style={{ color: '#7C799A' }}>
+                            Dokončené ({todos.filter(t => t.completed).length})
+                          </h2>
+                        </div>
+                        <button className="text-2xl" style={{ color: '#7C799A' }}>
+                          {showCompleted ? '−' : '+'}
+                        </button>
                       </div>
-                      <div className="space-y-3">
-                        {todos.filter(t => t.completed).map(todo => <TodoItem key={todo.id} todo={todo} />)}
-                      </div>
+                      {showCompleted && (
+                        <div className="space-y-3">
+                          {todos.filter(t => t.completed).map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
