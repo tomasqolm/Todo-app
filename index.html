@@ -623,14 +623,22 @@
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={saveFullEdit}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsTyping(false);
+                    saveFullEdit();
+                  }}
                   className="px-4 py-2 text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
                   style={{ backgroundColor: '#4d7cff' }}
                 >
                   💾 Uložiť
                 </button>
                 <button
-                  onClick={cancelEdit}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsTyping(false);
+                    cancelEdit();
+                  }}
                   className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all flex items-center gap-2"
                   style={{ color: '#7C799A' }}
                 >
