@@ -32,8 +32,6 @@
       const [editPriority, setEditPriority] = useState('less-urgent');
       const [editStatus, setEditStatus] = useState('none');
 
-      const [isSaving, setIsSaving] = useState(false);
-
       useEffect(() => {
         loadTodos();
       }, []);
