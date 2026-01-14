@@ -20,6 +20,7 @@
       const [todos, setTodos] = useState([]);
       const [isSaving, setIsSaving] = useState(false);
       const [newTask, setNewTask] = useState('');
+      const [newTask, setNewTask] = useState('');
       const [newDate, setNewDate] = useState('');
       const [newDateType, setNewDateType] = useState('specific');
       const [newPriority, setNewPriority] = useState('less-urgent');
@@ -39,16 +40,13 @@
       }, []);
 
       useEffect(() => {
-        // Skip save on initial load
-        if (todos.length === 0) return;
-        
-        const timeoutId = setTimeout(() => {
-          if (!isSaving) {
+        if (todos.length > 0) {
+          const timeoutId = setTimeout(() => {
             saveTodos();
-          }
-        }, 1000); // Zvýšil som na 1 sekundu
-        
-        return () => clearTimeout(timeoutId);
+          }, 1000);
+          
+          return () => clearTimeout(timeoutId);
+        }
       }, [todos]);
 
       const loadTodos = async () => {
