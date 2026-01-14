@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres';
+import { neon } from '@neondatabase/serverless';
 
 export default async function handler(req, res) {
   // CORS headers
@@ -9,6 +9,8 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
+
+  const sql = neon(process.env.DATABASE_URL);
 
   try {
     // Vytvor tabulku ak neexistuje
@@ -23,8 +25,8 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const result = await sql`SELECT data FROM todos ORDER BY id DESC LIMIT 1`;
       
-      if (result.rows.length > 0) {
-        return res.status(200).json(result.rows[0].data);
+      if (result.length > 0) {
+        return res.status(200).json(result[0].data);
       }
       
       return res.status(200).json([]);
@@ -33,7 +35,6 @@ export default async function handler(req, res) {
     if (req.method === 'POST') {
       const todos = req.body;
       
-      // Delete old data and insert new
       await sql`DELETE FROM todos`;
       await sql`INSERT INTO todos (data) VALUES (${JSON.stringify(todos)})`;
       
