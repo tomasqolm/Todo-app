@@ -35,20 +35,21 @@
       const [editDateType, setEditDateType] = useState('inbox');
       const [editPriority, setEditPriority] = useState('less-urgent');
       const [editStatus, setEditStatus] = useState('none');
+      const [isTyping, setIsTyping] = useState(false);
 
       useEffect(() => {
         loadTodos();
       }, []);
 
       useEffect(() => {
-        if (todos.length > 0) {
+        if (todos.length > 0 && !isTyping) {
           const timeoutId = setTimeout(() => {
             saveTodos();
           }, 1000);
           
           return () => clearTimeout(timeoutId);
         }
-      }, [todos]);
+      }, [todos, isTyping]);
 
       const loadTodos = async () => {
         try {
@@ -566,6 +567,8 @@
                     type="date"
                     value={editDate}
                     onChange={(e) => setEditDate(e.target.value)}
+                    onFocus={() => setIsTyping(true)}
+                    onBlur={() => setIsTyping(false)}
                     className="flex-1 min-w-[150px] px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                     style={{ color: '#10122F' }}
                   />
@@ -744,6 +747,8 @@
                               quickChangeDateSpecific(todo.id, e.target.value);
                             }
                           }}
+                          onFocus={() => setIsTyping(true)}
+                          onBlur={() => setIsTyping(false)}
                           className="w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-lg"
                           style={{ 
                             backgroundColor: '#f9fcfe',
@@ -1179,6 +1184,8 @@
                       type="date"
                       value={newDate}
                       onChange={(e) => setNewDate(e.target.value)}
+                      onFocus={() => setIsTyping(true)}
+                      onBlur={() => setIsTyping(false)}
                       className="px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all"
                       style={{ 
                         backgroundColor: '#f9fcfe',
