@@ -36,7 +36,9 @@
       }, []);
 
       useEffect(() => {
-        if (todos.length >= 0) saveTodos();
+        if (todos.length > 0) {
+          saveTodos();
+        }
       }, [todos]);
 
       const loadTodos = async () => {
@@ -275,11 +277,18 @@
 
       const isThisWeek = (dateStr) => {
         if (dateStr === 'this-week') return true;
+        if (dateStr === 'someday') return false;
+        
         const date = new Date(dateStr);
         const today = new Date();
-        const weekEnd = new Date(today);
-        weekEnd.setDate(today.getDate() + 7);
-        return date >= today && date <= weekEnd;
+        today.setHours(0, 0, 0, 0);
+        
+        const thisWeekEnd = new Date(today);
+        thisWeekEnd.setDate(today.getDate() + 7);
+        thisWeekEnd.setHours(23, 59, 59, 999);
+        
+        // Dátum je medzi dnes a 7 dní (vrátane)
+        return date >= today && date <= thisWeekEnd;
       };
 
       const isNextWeek = (dateStr) => {
@@ -291,9 +300,11 @@
         
         const thisWeekEnd = new Date(today);
         thisWeekEnd.setDate(today.getDate() + 7);
+        thisWeekEnd.setHours(23, 59, 59, 999);
         
         const nextWeekEnd = new Date(today);
         nextWeekEnd.setDate(today.getDate() + 14);
+        nextWeekEnd.setHours(23, 59, 59, 999);
         
         // Dátum je medzi 8. a 14. dňom od dnes
         return date > thisWeekEnd && date <= nextWeekEnd;
