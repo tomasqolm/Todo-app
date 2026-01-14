@@ -569,9 +569,14 @@
                   <input
                     type="date"
                     value={editDate}
-                    onChange={(e) => setEditDate(e.target.value)}
+                    onChange={(e) => {
+                      setIsTyping(true);
+                      setEditDate(e.target.value);
+                    }}
                     onFocus={() => setIsTyping(true)}
-                    onBlur={() => setIsTyping(false)}
+                    onBlur={() => {
+                      setTimeout(() => setIsTyping(false), 100);
+                    }}
                     className="flex-1 min-w-[150px] px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
                     style={{ color: '#10122F' }}
                   />
@@ -735,11 +740,17 @@
                           defaultValue={todo.date}
                           onChange={(e) => {
                             if (e.target.value) {
-                              quickChangeDateSpecific(todo.id, e.target.value);
+                              setIsTyping(true);
+                              setTimeout(() => {
+                                quickChangeDateSpecific(todo.id, e.target.value);
+                                setIsTyping(false);
+                              }, 100);
                             }
                           }}
                           onFocus={() => setIsTyping(true)}
-                          onBlur={() => setIsTyping(false)}
+                          onBlur={() => {
+                            setTimeout(() => setIsTyping(false), 100);
+                          }}
                           className="w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-lg"
                           style={{ 
                             backgroundColor: '#f9fcfe',
@@ -1110,18 +1121,6 @@
                 <div className="flex gap-3 flex-wrap">
                   <div className="flex gap-2 flex-wrap flex-1 min-w-[300px]">
                     <button
-                      onClick={() => setNewDateType('inbox')}
-                      className={`px-4 py-2 rounded-lg transition-all ${
-                        newDateType === 'inbox' ? 'text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200'
-                      }`}
-                      style={{
-                        backgroundColor: newDateType === 'inbox' ? '#5176FB' : undefined,
-                        color: newDateType === 'inbox' ? '#FFFFFF' : '#7C799A'
-                      }}
-                    >
-                      📥 Inbox
-                    </button>
-                    <button
                       onClick={() => setNewDateType('today')}
                       className={`px-4 py-2 rounded-lg transition-all ${
                         newDateType === 'today' ? 'text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200'
@@ -1174,9 +1173,14 @@
                     <input
                       type="date"
                       value={newDate}
-                      onChange={(e) => setNewDate(e.target.value)}
+                      onChange={(e) => {
+                        setIsTyping(true);
+                        setNewDate(e.target.value);
+                      }}
                       onFocus={() => setIsTyping(true)}
-                      onBlur={() => setIsTyping(false)}
+                      onBlur={() => {
+                        setTimeout(() => setIsTyping(false), 100);
+                      }}
                       className="px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all"
                       style={{ 
                         backgroundColor: '#f9fcfe',
