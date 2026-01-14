@@ -698,14 +698,15 @@
                         </label>
                         <input
                           type="date"
-                          value={tempDate}
-                          onChange={(e) => setTempDate(e.target.value)}
+                          defaultValue={tempDate}
+                          onInput={(e) => setTempDate(e.target.value)}
                           className="w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-lg"
                           style={{ 
                             backgroundColor: '#f9fcfe',
                             borderColor: '#5176FB',
                             color: '#10122F'
                           }}
+                          autoFocus
                         />
                       </div>
                       <div className="flex gap-2">
