@@ -348,18 +348,28 @@
         });
 
         const priorityOrder = { high: 0, medium: 1, low: 2, 'less-urgent': 1, 'can-wait': 2, urgent: 0 };
-        const sortByPriority = (a, b) => {
+        const sortByPriorityAndDate = (a, b) => {
+          // Najskor podla datumu (najskorsi deadline hore)
+          const dateA = new Date(a.date === 'this-week' || a.date === 'someday' ? '2099-12-31' : a.date);
+          const dateB = new Date(b.date === 'this-week' || b.date === 'someday' ? '2099-12-31' : b.date);
+          
+          if (dateA.getTime() !== dateB.getTime()) {
+            return dateA - dateB;
+          }
+          
+          // Potom podla priority
           if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
             return priorityOrder[a.priority] - priorityOrder[b.priority];
           }
-          return new Date(a.date) - new Date(b.date);
+          
+          return 0;
         };
 
-        groups.today.sort(sortByPriority);
-        groups.thisWeek.sort(sortByPriority);
-        groups.nextWeek.sort((a, b) => new Date(a.date) - new Date(b.date));
-        groups.later.sort((a, b) => new Date(a.date) - new Date(b.date));
-        groups.someday.sort(sortByPriority);
+        groups.today.sort(sortByPriorityAndDate);
+        groups.thisWeek.sort(sortByPriorityAndDate);
+        groups.nextWeek.sort(sortByPriorityAndDate);
+        groups.later.sort(sortByPriorityAndDate);
+        groups.someday.sort(sortByPriorityAndDate);
 
         return groups;
       };
