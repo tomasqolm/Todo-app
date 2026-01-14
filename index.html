@@ -18,6 +18,7 @@
     function TodoApp() {
       const [showStats, setShowStats] = useState(false);
       const [todos, setTodos] = useState([]);
+      const [isSaving, setIsSaving] = useState(false);
       const [newTask, setNewTask] = useState('');
       const [newDate, setNewDate] = useState('');
       const [newDateType, setNewDateType] = useState('specific');
@@ -31,14 +32,23 @@
       const [editPriority, setEditPriority] = useState('less-urgent');
       const [editStatus, setEditStatus] = useState('none');
 
+      const [isSaving, setIsSaving] = useState(false);
+
       useEffect(() => {
         loadTodos();
       }, []);
 
       useEffect(() => {
-        if (todos.length > 0) {
-          saveTodos();
-        }
+        // Skip save on initial load
+        if (todos.length === 0) return;
+        
+        const timeoutId = setTimeout(() => {
+          if (!isSaving) {
+            saveTodos();
+          }
+        }, 1000); // Zvýšil som na 1 sekundu
+        
+        return () => clearTimeout(timeoutId);
       }, [todos]);
 
       const loadTodos = async () => {
@@ -61,6 +71,7 @@
       };
 
       const saveTodos = async () => {
+        setIsSaving(true);
         try {
           await fetch('/.netlify/functions/todos', {
             method: 'POST',
@@ -69,6 +80,8 @@
           });
         } catch (error) {
           console.error('Failed to save todos:', error);
+        } finally {
+          setIsSaving(false);
         }
       };
 
