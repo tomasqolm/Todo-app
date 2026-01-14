@@ -17,6 +17,9 @@
 
     function TodoApp() {
       const [showStats, setShowStats] = useState(false);
+      const [showCalendar, setShowCalendar] = useState(false);
+      const [currentMonth, setCurrentMonth] = useState(new Date());
+      const [selectedDate, setSelectedDate] = useState(null);
       const [todos, setTodos] = useState([]);
       const [isSaving, setIsSaving] = useState(false);
       const [newTask, setNewTask] = useState('');
@@ -26,7 +29,7 @@
       const [newStatus, setNewStatus] = useState('none');
       const [editingId, setEditingId] = useState(null);
       const [editingFullMode, setEditingFullMode] = useState(false);
-      const [showDatePicker, setShowDatePicker] = useState(null); // ID ulohy s otvorenym date pickerom
+      const [showDatePicker, setShowDatePicker] = useState(null);
       const [editTask, setEditTask] = useState('');
       const [editDate, setEditDate] = useState('');
       const [editDateType, setEditDateType] = useState('specific');
@@ -298,9 +301,8 @@
         const date = new Date(dateStr);
         const today = new Date();
         
-        // Zisti zaciatok a koniec aktualneho tyzdna (pondelok-nedela)
-        const currentDay = today.getDay(); // 0 = nedela, 1 = pondelok, ...
-        const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay; // Offset na pondelok
+        const currentDay = today.getDay();
+        const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
         
         const thisMonday = new Date(today);
         thisMonday.setDate(today.getDate() + mondayOffset);
@@ -319,12 +321,11 @@
         const date = new Date(dateStr);
         const today = new Date();
         
-        // Zisti zaciatok a koniec budúceho tyzdna
         const currentDay = today.getDay();
         const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
         
         const nextMonday = new Date(today);
-        nextMonday.setDate(today.getDate() + mondayOffset + 7); // Pribudúci pondelok
+        nextMonday.setDate(today.getDate() + mondayOffset + 7);
         nextMonday.setHours(0, 0, 0, 0);
         
         const nextSunday = new Date(nextMonday);
@@ -365,7 +366,6 @@
 
         const priorityOrder = { high: 0, medium: 1, low: 2, 'less-urgent': 1, 'can-wait': 2, urgent: 0 };
         const sortByPriorityAndDate = (a, b) => {
-          // Najskor podla datumu (najskorsi deadline hore)
           const dateA = new Date(a.date === 'this-week' || a.date === 'someday' ? '2099-12-31' : a.date);
           const dateB = new Date(b.date === 'this-week' || b.date === 'someday' ? '2099-12-31' : b.date);
           
@@ -373,7 +373,6 @@
             return dateA - dateB;
           }
           
-          // Potom podla priority
           if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
             return priorityOrder[a.priority] - priorityOrder[b.priority];
           }
@@ -410,6 +409,32 @@
       };
 
       const stats = getStats();
+
+      const getDaysInMonth = (date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDayOfWeek = firstDay.getDay();
+        
+        return { daysInMonth, startingDayOfWeek, year, month };
+      };
+
+      const getTasksForDate = (dateStr) => {
+        return todos.filter(t => {
+          if (t.date === 'this-week' || t.date === 'someday') return false;
+          return t.date === dateStr;
+        });
+      };
+
+      const previousMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+      };
+
+      const nextMonth = () => {
+        setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+      };
 
       const TodoItem = ({ todo }) => (
         <div
@@ -861,7 +886,163 @@
                 >
                   📊 Štatistiky
                 </button>
+                <button
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
+                    showCalendar ? 'text-white shadow-lg scale-105' : 'hover:bg-gray-100'
+                  }`}
+                  style={{
+                    backgroundColor: showCalendar ? '#5176FB' : 'transparent',
+                    color: showCalendar ? '#FFFFFF' : '#7C799A'
+                  }}
+                >
+                  📅 Kalendár
+                </button>
               </div>
+
+              {showCalendar && (
+                <div className="mb-8 p-6 rounded-2xl border-2" style={{ backgroundColor: '#f9fcfe', borderColor: '#5176FB' }}>
+                  <div className="flex items-center justify-between mb-6">
+                    <button
+                      onClick={previousMonth}
+                      className="px-4 py-2 rounded-lg hover:bg-white transition-all"
+                      style={{ color: '#5176FB' }}
+                    >
+                      ← Predošlý
+                    </button>
+                    <h3 className="text-2xl font-bold" style={{ color: '#10122F' }}>
+                      {currentMonth.toLocaleDateString('sk-SK', { month: 'long', year: 'numeric' })}
+                    </h3>
+                    <button
+                      onClick={nextMonth}
+                      className="px-4 py-2 rounded-lg hover:bg-white transition-all"
+                      style={{ color: '#5176FB' }}
+                    >
+                      Ďalší →
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-7 gap-2">
+                    {['Po', 'Ut', 'St', 'Št', 'Pi', 'So', 'Ne'].map(day => (
+                      <div key={day} className="text-center font-bold py-2" style={{ color: '#7C799A' }}>
+                        {day}
+                      </div>
+                    ))}
+                    
+                    {(() => {
+                      const { daysInMonth, startingDayOfWeek, year, month } = getDaysInMonth(currentMonth);
+                      const days = [];
+                      const adjustedStart = startingDayOfWeek === 0 ? 6 : startingDayOfWeek - 1;
+                      
+                      for (let i = 0; i < adjustedStart; i++) {
+                        days.push(<div key={`empty-${i}`} className="aspect-square"></div>);
+                      }
+                      
+                      for (let day = 1; day <= daysInMonth; day++) {
+                        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                        const tasksForDay = getTasksForDate(dateStr);
+                        const isToday = dateStr === new Date().toISOString().split('T')[0];
+                        const isSelected = selectedDate === dateStr;
+                        
+                        days.push(
+                          <div
+                            key={day}
+                            onClick={() => setSelectedDate(isSelected ? null : dateStr)}
+                            className="aspect-square p-2 rounded-xl cursor-pointer transition-all hover:scale-105"
+                            style={{
+                              backgroundColor: isSelected ? '#5176FB' : isToday ? '#e9eeff' : 'white',
+                              border: `2px solid ${isToday ? '#5176FB' : 'transparent'}`,
+                              color: isSelected ? '#FFFFFF' : '#10122F'
+                            }}
+                          >
+                            <div className="font-semibold mb-1">{day}</div>
+                            {tasksForDay.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {tasksForDay.slice(0, 3).map(task => (
+                                  <div
+                                    key={task.id}
+                                    className="w-2 h-2 rounded-full"
+                                    style={{
+                                      backgroundColor: task.completed ? '#4ade80' : task.priority === 'urgent' ? '#F16475' : task.priority === 'less-urgent' ? '#da7aff' : '#4d7cff'
+                                    }}
+                                  ></div>
+                                ))}
+                                {tasksForDay.length > 3 && (
+                                  <div className="text-xs" style={{ color: isSelected ? '#FFFFFF' : '#7C799A' }}>
+                                    +{tasksForDay.length - 3}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      }
+                      
+                      return days;
+                    })()}
+                  </div>
+                  
+                  {selectedDate && (
+                    <div className="mt-6 p-4 rounded-xl" style={{ backgroundColor: 'white', border: '2px solid #5176FB' }}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-bold" style={{ color: '#10122F' }}>
+                          📅 {new Date(selectedDate).toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        </h4>
+                        <button
+                          onClick={() => setSelectedDate(null)}
+                          className="text-gray-400 hover:text-gray-600"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      
+                      {getTasksForDate(selectedDate).length === 0 ? (
+                        <p className="text-center py-4" style={{ color: '#7C799A' }}>
+                          Žiadne úlohy v tento deň
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {getTasksForDate(selectedDate).map(task => (
+                            <div
+                              key={task.id}
+                              className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-all"
+                            >
+                              <button
+                                onClick={() => toggleComplete(task.id)}
+                                className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center flex-shrink-0 ${
+                                  task.completed ? 'bg-green-500 border-green-500' : 'border-gray-300'
+                                }`}
+                              >
+                                {task.completed && <span className="text-white text-sm">✓</span>}
+                              </button>
+                              <span
+                                className={`flex-1 ${task.completed ? 'line-through opacity-50' : ''}`}
+                                style={{ color: '#10122F' }}
+                              >
+                                {task.task}
+                              </span>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => startFullEdit(task)}
+                                  className="text-gray-400 hover:text-blue-500 transition-all"
+                                >
+                                  ✏️
+                                </button>
+                                <button
+                                  onClick={() => deleteTodo(task.id)}
+                                  className="text-gray-400 hover:text-red-400 transition-all"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <div className="space-y-4">
                 <input
