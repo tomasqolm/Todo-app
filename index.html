@@ -24,7 +24,7 @@
       const [isSaving, setIsSaving] = useState(false);
       const [newTask, setNewTask] = useState('');
       const [newDate, setNewDate] = useState('');
-      const [newDateType, setNewDateType] = useState('inbox');
+      const [newDateType, setNewDateType] = useState('');
       const [newPriority, setNewPriority] = useState('less-urgent');
       const [newStatus, setNewStatus] = useState('none');
       const [editingId, setEditingId] = useState(null);
@@ -124,8 +124,9 @@
         
         let finalDate;
         let dateLabel;
+        let finalDateType = newDateType || 'inbox'; // Default to inbox if nothing selected
         
-        switch(newDateType) {
+        switch(finalDateType) {
           case 'inbox':
             finalDate = 'inbox';
             dateLabel = 'Inbox';
@@ -154,7 +155,7 @@
           task: newTask,
           date: finalDate,
           dateLabel: dateLabel,
-          dateType: newDateType,
+          dateType: finalDateType,
           priority: newPriority,
           status: newStatus,
           completed: false,
@@ -165,7 +166,7 @@
         setTodos([...todos, todo]);
         setNewTask('');
         setNewDate('');
-        setNewDateType('inbox');
+        setNewDateType('');
         setNewPriority('less-urgent');
         setNewStatus('none');
       };
@@ -485,6 +486,8 @@
                 type="text"
                 value={editTask}
                 onChange={(e) => setEditTask(e.target.value)}
+                onFocus={() => setIsTyping(true)}
+                onBlur={() => setIsTyping(false)}
                 className="w-full px-4 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
                 style={{ color: '#10122F' }}
                 autoFocus
@@ -618,9 +621,14 @@
                 type="text"
                 value={editTask}
                 onChange={(e) => setEditTask(e.target.value)}
-                onBlur={() => saveTaskName(todo.id, editTask)}
+                onFocus={() => setIsTyping(true)}
+                onBlur={() => {
+                  setIsTyping(false);
+                  saveTaskName(todo.id, editTask);
+                }}
                 onKeyPress={(e) => {
                   if (e.key === 'Enter') {
+                    setIsTyping(false);
                     saveTaskName(todo.id, editTask);
                   }
                 }}
@@ -641,23 +649,6 @@
                 </p>
                 <div className="flex gap-3 mt-2 flex-wrap items-center relative">
                   <div className="flex gap-1">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        quickChangeDate(todo.id, 'inbox');
-                      }}
-                      className={`px-2 py-1 rounded text-xs transition-all ${
-                        todo.dateType === 'inbox'
-                          ? 'text-white shadow-md'
-                          : 'bg-gray-100 hover:bg-gray-200'
-                      }`}
-                      style={{
-                        backgroundColor: todo.dateType === 'inbox' ? '#5176FB' : undefined,
-                        color: todo.dateType === 'inbox' ? '#FFFFFF' : '#7C799A'
-                      }}
-                    >
-                      📥 Inbox
-                    </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
