@@ -18,6 +18,9 @@
     function TodoApp() {
       const [showStats, setShowStats] = useState(false);
       const [showCalendar, setShowCalendar] = useState(false);
+      const [showPizzaReview, setShowPizzaReview] = useState(false);
+      const [pizzaReviewDate, setPizzaReviewDate] = useState(null);
+      const [editingPizzaDate, setEditingPizzaDate] = useState(false);
       const [currentMonth, setCurrentMonth] = useState(new Date());
       const [selectedDate, setSelectedDate] = useState(null);
       const [todos, setTodos] = useState([]);
@@ -51,11 +54,18 @@
         }
       }, [todos, isTyping]);
 
+      useEffect(() => {
+        if (pizzaReviewDate !== null) {
+          saveTodos();
+        }
+      }, [pizzaReviewDate]);
+
       const loadTodos = async () => {
         try {
           const response = await fetch('/api/todos');
           if (response.ok) {
-            const loadedTodos = await response.json();
+            const data = await response.json();
+            const loadedTodos = data.todos || data;
             const migratedTodos = loadedTodos.map(todo => ({
               ...todo,
               dateType: todo.dateType || 'specific',
@@ -64,6 +74,11 @@
               status: todo.status || 'none'
             }));
             setTodos(migratedTodos);
+            
+            // Load pizza review date
+            if (data.pizzaReviewDate) {
+              setPizzaReviewDate(data.pizzaReviewDate);
+            }
           }
         } catch (error) {
           console.error('Failed to load todos:', error);
@@ -76,7 +91,10 @@
           await fetch('/api/todos', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(todos)
+            body: JSON.stringify({
+              todos: todos,
+              pizzaReviewDate: pizzaReviewDate
+            })
           });
         } catch (error) {
           console.error('Failed to save todos:', error);
@@ -958,13 +976,29 @@
                 >
                   📅 Kalendár
                 </button>
+                <button
+                  onClick={() => setShowPizzaReview(!showPizzaReview)}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
+                    showPizzaReview ? 'text-white shadow-lg scale-105' : 'hover:bg-gray-100'
+                  }`}
+                  style={{
+                    backgroundColor: showPizzaReview ? '#F16475' : 'transparent',
+                    color: showPizzaReview ? '#FFFFFF' : '#7C799A'
+                  }}
+                >
+                  🍕 Pizza Review
+                </button>
               </div>
 
               {showCalendar && (
                 <div className="mb-8 p-6 rounded-2xl border-2" style={{ backgroundColor: '#f9fcfe', borderColor: '#5176FB' }}>
                   <div className="flex items-center justify-between mb-6">
                     <button
-                      onClick={previousMonth}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        previousMonth();
+                      }}
                       className="px-4 py-2 rounded-lg hover:bg-white transition-all"
                       style={{ color: '#5176FB' }}
                     >
@@ -974,7 +1008,11 @@
                       {currentMonth.toLocaleDateString('sk-SK', { month: 'long', year: 'numeric' })}
                     </h3>
                     <button
-                      onClick={nextMonth}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        nextMonth();
+                      }}
                       className="px-4 py-2 rounded-lg hover:bg-white transition-all"
                       style={{ color: '#5176FB' }}
                     >
@@ -1099,6 +1137,138 @@
                           ))}
                         </div>
                       )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {showPizzaReview && (
+                <div className="mb-8 p-6 rounded-2xl border-2" style={{ backgroundColor: '#FFF5F5', borderColor: '#F16475' }}>
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                      <span className="text-3xl">🍕</span>
+                      <h3 className="text-2xl font-bold" style={{ color: '#10122F' }}>
+                        Pizza Review
+                      </h3>
+                    </div>
+                  </div>
+
+                  <div className="mb-6 p-4 rounded-xl bg-white border-2" style={{ borderColor: '#F16475' }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <label className="text-sm font-medium" style={{ color: '#10122F' }}>
+                        Posledný Pizza Review:
+                      </label>
+                      {!editingPizzaDate && pizzaReviewDate && (
+                        <button
+                          onClick={() => setEditingPizzaDate(true)}
+                          className="text-xs px-3 py-1 rounded-lg hover:bg-gray-100 transition-all"
+                          style={{ color: '#F16475' }}
+                        >
+                          ✏️ Zmeniť
+                        </button>
+                      )}
+                    </div>
+                    
+                    {editingPizzaDate || !pizzaReviewDate ? (
+                      <div className="flex gap-2">
+                        <input
+                          type="date"
+                          defaultValue={pizzaReviewDate || new Date().toISOString().split('T')[0]}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              setPizzaReviewDate(e.target.value);
+                              setEditingPizzaDate(false);
+                            }
+                          }}
+                          className="flex-1 px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-2 transition-all"
+                          style={{ 
+                            backgroundColor: '#f9fcfe',
+                            borderColor: '#F16475',
+                            color: '#10122F'
+                          }}
+                        />
+                        {pizzaReviewDate && (
+                          <button
+                            onClick={() => setEditingPizzaDate(false)}
+                            className="px-4 py-2 rounded-xl transition-all"
+                            style={{
+                              backgroundColor: '#F16475',
+                              color: '#FFFFFF'
+                            }}
+                          >
+                            Zavrieť
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xl font-bold" style={{ color: '#F16475' }}>
+                        {new Date(pizzaReviewDate).toLocaleDateString('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    )}
+                  </div>
+
+                  {pizzaReviewDate && (
+                    <div>
+                      <h4 className="text-lg font-bold mb-4" style={{ color: '#10122F' }}>
+                        Dokončené úlohy od posledného Pizza Review:
+                      </h4>
+                      {(() => {
+                        const reviewDate = new Date(pizzaReviewDate);
+                        reviewDate.setHours(0, 0, 0, 0);
+                        const completedSinceReview = todos.filter(t => {
+                          if (!t.completed || !t.completedAt) return false;
+                          const completedDate = new Date(t.completedAt);
+                          return completedDate >= reviewDate;
+                        }).sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+
+                        if (completedSinceReview.length === 0) {
+                          return (
+                            <p className="text-center py-8" style={{ color: '#7C799A' }}>
+                              Zatiaľ žiadne dokončené úlohy od posledného Pizza Review
+                            </p>
+                          );
+                        }
+
+                        return (
+                          <div className="space-y-2">
+                            {completedSinceReview.map(task => (
+                              <div
+                                key={task.id}
+                                className="flex items-center gap-3 p-4 rounded-xl bg-white border hover:shadow-md transition-all"
+                                style={{ borderColor: '#F16475' }}
+                              >
+                                <div className="w-6 h-6 rounded-lg bg-green-500 flex items-center justify-center flex-shrink-0">
+                                  <span className="text-white text-sm">✓</span>
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-medium" style={{ color: '#10122F' }}>
+                                    {task.task}
+                                  </p>
+                                  <p className="text-xs mt-1" style={{ color: '#7C799A' }}>
+                                    Dokončené: {new Date(task.completedAt).toLocaleDateString('sk-SK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                  </p>
+                                </div>
+                                {task.priority && (
+                                  <span className="text-xs px-2 py-1 rounded" style={{
+                                    backgroundColor: task.priority === 'urgent' ? '#FFE9E9' : task.priority === 'less-urgent' ? '#FFF5E6' : '#e9eeff',
+                                    color: task.priority === 'urgent' ? '#F16475' : task.priority === 'less-urgent' ? '#da7aff' : '#5176FB'
+                                  }}>
+                                    {task.priority === 'urgent' ? '🔥' : task.priority === 'less-urgent' ? '⚡' : '✨'}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                            <div className="mt-6 p-4 rounded-xl text-center" style={{ backgroundColor: '#e9eeff' }}>
+                              <p className="text-2xl font-bold mb-1" style={{ color: '#5176FB' }}>
+                                {completedSinceReview.length}
+                              </p>
+                              <p className="text-sm" style={{ color: '#7C799A' }}>
+                                úloh dokončených od {new Date(pizzaReviewDate).toLocaleDateString('sk-SK', { day: 'numeric', month: 'short' })}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
