@@ -30,6 +30,7 @@
       const [editingId, setEditingId] = useState(null);
       const [editingFullMode, setEditingFullMode] = useState(false);
       const [showDatePicker, setShowDatePicker] = useState(null);
+      const [tempDate, setTempDate] = useState('');
       const [editTask, setEditTask] = useState('');
       const [editDate, setEditDate] = useState('');
       const [editDateType, setEditDateType] = useState('specific');
@@ -232,11 +233,19 @@
         setEditingId(null);
       };
 
-      const quickChangeDateSpecific = (id, date) => {
-        setTodos(todos.map(t => 
-          t.id === id ? { ...t, date: date, dateLabel: null, dateType: 'specific' } : t
-        ));
+      const openDatePicker = (todo) => {
+        setShowDatePicker(todo.id);
+        setTempDate(todo.date);
+      };
+
+      const saveDateChange = () => {
+        if (tempDate && showDatePicker) {
+          setTodos(todos.map(t => 
+            t.id === showDatePicker ? { ...t, date: tempDate, dateLabel: null, dateType: 'specific' } : t
+          ));
+        }
         setShowDatePicker(null);
+        setTempDate('');
       };
 
       const quickChangeDate = (id, dateType) => {
@@ -604,7 +613,7 @@
                    style={{ color: todo.completed ? '#7C799A' : '#10122F' }}>
                   {todo.task}
                 </p>
-                <div className="flex gap-3 mt-2 flex-wrap items-center">
+                <div className="flex gap-3 mt-2 flex-wrap items-center relative">
                   <div className="flex gap-1">
                     <button
                       onClick={(e) => {
@@ -663,7 +672,7 @@
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShowDatePicker(showDatePicker === todo.id ? null : todo.id);
+                        openDatePicker(todo);
                       }}
                       className="text-xs px-2 py-1 rounded flex items-center gap-1 hover:shadow-md transition-all"
                       style={{
@@ -689,8 +698,8 @@
                         </label>
                         <input
                           type="date"
-                          defaultValue={todo.date}
-                          onChange={(e) => quickChangeDateSpecific(todo.id, e.target.value)}
+                          value={tempDate}
+                          onChange={(e) => setTempDate(e.target.value)}
                           className="w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-lg"
                           style={{ 
                             backgroundColor: '#f9fcfe',
@@ -699,19 +708,32 @@
                           }}
                         />
                       </div>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowDatePicker(null);
-                        }}
-                        className="w-full px-4 py-2 rounded-lg transition-all font-medium"
-                        style={{
-                          backgroundColor: '#5176FB',
-                          color: '#FFFFFF'
-                        }}
-                      >
-                        Zavrieť
-                      </button>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            saveDateChange();
+                          }}
+                          className="flex-1 px-4 py-2 rounded-lg transition-all font-medium"
+                          style={{
+                            backgroundColor: '#5176FB',
+                            color: '#FFFFFF'
+                          }}
+                        >
+                          Uložiť
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowDatePicker(null);
+                            setTempDate('');
+                          }}
+                          className="px-4 py-2 rounded-lg transition-all font-medium bg-gray-100"
+                          style={{ color: '#7C799A' }}
+                        >
+                          Zrušiť
+                        </button>
+                      </div>
                     </div>
                   )}
                   
@@ -941,7 +963,7 @@
                       for (let day = 1; day <= daysInMonth; day++) {
                         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
                         const tasksForDay = getTasksForDate(dateStr);
-                        const isToday = dateStr === new Date().toISOString().split('T')[0];
+                        const isTodayDate = dateStr === new Date().toISOString().split('T')[0];
                         const isSelected = selectedDate === dateStr;
                         
                         days.push(
@@ -950,8 +972,8 @@
                             onClick={() => setSelectedDate(isSelected ? null : dateStr)}
                             className="aspect-square p-2 rounded-xl cursor-pointer transition-all hover:scale-105"
                             style={{
-                              backgroundColor: isSelected ? '#5176FB' : isToday ? '#e9eeff' : 'white',
-                              border: `2px solid ${isToday ? '#5176FB' : 'transparent'}`,
+                              backgroundColor: isSelected ? '#5176FB' : isTodayDate ? '#e9eeff' : 'white',
+                              border: `2px solid ${isTodayDate ? '#5176FB' : 'transparent'}`,
                               color: isSelected ? '#FFFFFF' : '#10122F'
                             }}
                           >
