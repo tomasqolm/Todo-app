@@ -57,6 +57,14 @@
 
       useEffect(() => {
         loadTodos();
+        
+        // Periodic sync every 30 seconds
+        const syncInterval = setInterval(() => {
+          console.log('🔄 Auto-sync...');
+          loadTodos();
+        }, 30000);
+        
+        return () => clearInterval(syncInterval);
       }, []);
 
       useEffect(() => {
@@ -80,15 +88,49 @@
           const response = await fetch('/api/todos');
           if (response.ok) {
             const data = await response.json();
-            const loadedTodos = data.todos || data;
-            const migratedTodos = loadedTodos.map(todo => ({
+            const serverTodos = data.todos || data;
+            
+            // Migrate server todos
+            const migratedServerTodos = Array.isArray(serverTodos) ? serverTodos.map(todo => ({
               ...todo,
               dateType: todo.dateType || 'specific',
               dateLabel: todo.dateLabel || null,
               completedAt: todo.completedAt || null,
-              status: todo.status || 'none'
-            }));
-            setTodos(migratedTodos);
+              status: todo.status || 'none',
+              lastModified: todo.lastModified || todo.id // Use creation time if no lastModified
+            })) : [];
+            
+            // Get local todos (if any exist from previous session)
+            const localTodos = todos;
+            
+            // Merge logic: combine server and local, keeping newest version of each task
+            const mergedTodos = {};
+            
+            // Add all server todos
+            migratedServerTodos.forEach(todo => {
+              mergedTodos[todo.id] = todo;
+            });
+            
+            // Add or update with local todos if they're newer
+            localTodos.forEach(todo => {
+              const todoWithModified = {
+                ...todo,
+                lastModified: todo.lastModified || todo.id
+              };
+              
+              if (!mergedTodos[todo.id] || todoWithModified.lastModified > mergedTodos[todo.id].lastModified) {
+                mergedTodos[todo.id] = todoWithModified;
+              }
+            });
+            
+            const finalTodos = Object.values(mergedTodos);
+            setTodos(finalTodos);
+            
+            console.log('📥 Loaded todos:', {
+              server: migratedServerTodos.length,
+              local: localTodos.length,
+              merged: finalTodos.length
+            });
             
             // Load pizza review date
             if (data.pizzaReviewDate) {
@@ -96,23 +138,37 @@
             }
           }
         } catch (error) {
-          console.error('Failed to load todos:', error);
+          console.error('❌ Failed to load todos:', error);
         }
       };
 
       const saveTodos = async () => {
         setIsSaving(true);
         try {
-          await fetch('/api/todos', {
+          // Add lastModified timestamp to all todos before saving
+          const todosWithTimestamp = todos.map(todo => ({
+            ...todo,
+            lastModified: Date.now()
+          }));
+          
+          const response = await fetch('/api/todos', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              todos: todos,
+              todos: todosWithTimestamp,
               pizzaReviewDate: pizzaReviewDate
             })
           });
+          
+          if (response.ok) {
+            console.log('💾 Saved todos:', todosWithTimestamp.length);
+            // Update local state with timestamps
+            setTodos(todosWithTimestamp);
+          } else {
+            console.error('❌ Save failed:', response.status);
+          }
         } catch (error) {
-          console.error('Failed to save todos:', error);
+          console.error('❌ Failed to save todos:', error);
         } finally {
           setIsSaving(false);
         }
@@ -364,8 +420,9 @@
             break;
         }
         
+        const now = Date.now();
         const todo = {
-          id: Date.now(),
+          id: now,
           task: newTask,
           date: finalDate,
           dateLabel: dateLabel,
@@ -374,9 +431,11 @@
           status: newStatus,
           completed: false,
           completedAt: null,
-          order: todos.length
+          order: todos.length,
+          lastModified: now
         };
         
+        console.log('➕ Adding todo:', todo.task);
         setTodos([...todos, todo]);
         setNewTask('');
         setNewDate('');
@@ -432,7 +491,7 @@
         
         setTodos(todos.map(t => 
           t.id === editingId 
-            ? { ...t, task: editTask, date: finalDate, dateLabel: dateLabel, dateType: editDateType, priority: editPriority, status: editStatus }
+            ? { ...t, task: editTask, date: finalDate, dateLabel: dateLabel, dateType: editDateType, priority: editPriority, status: editStatus, lastModified: Date.now() }
             : t
         ));
         cancelEdit();
@@ -451,14 +510,14 @@
       const saveTaskName = (id, newTaskName) => {
         if (!newTaskName.trim()) return;
         setTodos(todos.map(t => 
-          t.id === id ? { ...t, task: newTaskName } : t
+          t.id === id ? { ...t, task: newTaskName, lastModified: Date.now() } : t
         ));
         setEditingId(null);
       };
 
       const quickChangeDateSpecific = (id, date) => {
         setTodos(todos.map(t => 
-          t.id === id ? { ...t, date: date, dateLabel: null, dateType: 'specific' } : t
+          t.id === id ? { ...t, date: date, dateLabel: null, dateType: 'specific', lastModified: Date.now() } : t
         ));
         setShowDatePicker(null);
       };
@@ -489,13 +548,13 @@
         }
         
         setTodos(todos.map(t => 
-          t.id === id ? { ...t, date: finalDate, dateLabel: dateLabel, dateType: dateType } : t
+          t.id === id ? { ...t, date: finalDate, dateLabel: dateLabel, dateType: dateType, lastModified: Date.now() } : t
         ));
       };
 
       const changeStatus = (id, newStatus) => {
         setTodos(todos.map(t => 
-          t.id === id ? { ...t, status: newStatus } : t
+          t.id === id ? { ...t, status: newStatus, lastModified: Date.now() } : t
         ));
       };
 
@@ -505,7 +564,8 @@
             return {
               ...t,
               completed: !t.completed,
-              completedAt: !t.completed ? new Date().toISOString() : null
+              completedAt: !t.completed ? new Date().toISOString() : null,
+              lastModified: Date.now()
             };
           }
           return t;
@@ -513,12 +573,13 @@
       };
 
       const deleteTodo = (id) => {
+        console.log('🗑️ Deleting todo:', id);
         setTodos(todos.filter(t => t.id !== id));
       };
 
       const changePriority = (id, newPriority) => {
         setTodos(todos.map(t => 
-          t.id === id ? { ...t, priority: newPriority } : t
+          t.id === id ? { ...t, priority: newPriority, lastModified: Date.now() } : t
         ));
       };
 
@@ -1096,8 +1157,13 @@
         <div className="min-h-screen p-4" style={{ background: 'linear-gradient(135deg, #EAEEFC 0%, #f9fcfe 100%)' }}>
           <div className="max-w-5xl mx-auto">
             <div className="bg-white rounded-3xl shadow-lg p-8 mb-6 border" style={{ borderColor: '#f0f3fc' }}>
-              <h1 className="text-4xl font-bold mb-8 tracking-tight" style={{ color: '#10122F' }}>
+              <h1 className="text-4xl font-bold mb-8 tracking-tight flex items-center gap-3" style={{ color: '#10122F' }}>
                 ✨ Moje úlohy
+                {isSaving && (
+                  <span className="text-sm font-normal px-3 py-1 rounded-full animate-pulse" style={{ backgroundColor: '#e9eeff', color: '#5176FB' }}>
+                    💾 Ukladám...
+                  </span>
+                )}
               </h1>
 
               {showStats && (
