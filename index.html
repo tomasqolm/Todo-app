@@ -27,6 +27,12 @@
       const [showCalendar, setShowCalendar] = useState(false);
       const [showPizzaReview, setShowPizzaReview] = useState(false);
       const [showCompleted, setShowCompleted] = useState(true);
+      const [showInbox, setShowInbox] = useState(true);
+      const [showToday, setShowToday] = useState(true);
+      const [showThisWeek, setShowThisWeek] = useState(true);
+      const [showNextWeek, setShowNextWeek] = useState(true);
+      const [showLater, setShowLater] = useState(true);
+      const [showSomeday, setShowSomeday] = useState(true);
       const [pizzaReviewDate, setPizzaReviewDate] = useState(null);
       const [editingPizzaDate, setEditingPizzaDate] = useState(false);
       const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -1399,85 +1405,145 @@
                 <div className="space-y-8">
                   {displayTodos.inbox.length > 0 && (
                     <div className="p-5 rounded-2xl" style={{ backgroundColor: '#F0F4FF' }}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#5176FB' }}></div>
-                        <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
-                          📥 Inbox
-                        </h2>
+                      <div 
+                        className="flex items-center justify-between mb-4 cursor-pointer hover:opacity-80 transition-all"
+                        onClick={() => setShowInbox(!showInbox)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#5176FB' }}></div>
+                          <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
+                            📥 Inbox ({displayTodos.inbox.length})
+                          </h2>
+                        </div>
+                        <button className="text-2xl" style={{ color: '#10122F' }}>
+                          {showInbox ? '−' : '+'}
+                        </button>
                       </div>
-                      <div className="space-y-3">
-                        {displayTodos.inbox.map(todo => <TodoItem key={todo.id} todo={todo} />)}
-                      </div>
+                      {showInbox && (
+                        <div className="space-y-3">
+                          {displayTodos.inbox.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                        </div>
+                      )}
                     </div>
                   )}
 
                   {displayTodos.today.length > 0 && (
                     <div className="p-5 rounded-2xl" style={{ backgroundColor: '#FFF5F5' }}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#F16475' }}></div>
-                        <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
-                          Dnes
-                        </h2>
+                      <div 
+                        className="flex items-center justify-between mb-4 cursor-pointer hover:opacity-80 transition-all"
+                        onClick={() => setShowToday(!showToday)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#F16475' }}></div>
+                          <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
+                            Dnes ({displayTodos.today.length})
+                          </h2>
+                        </div>
+                        <button className="text-2xl" style={{ color: '#10122F' }}>
+                          {showToday ? '−' : '+'}
+                        </button>
                       </div>
-                      <div className="space-y-3">
-                        {displayTodos.today.map(todo => <TodoItem key={todo.id} todo={todo} />)}
-                      </div>
+                      {showToday && (
+                        <div className="space-y-3">
+                          {displayTodos.today.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                        </div>
+                      )}
                     </div>
                   )}
                   
                   {displayTodos.thisWeek.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#5176FB' }}></div>
-                        <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
-                          Tento týždeň
-                        </h2>
+                      <div 
+                        className="flex items-center justify-between mb-4 cursor-pointer hover:opacity-80 transition-all"
+                        onClick={() => setShowThisWeek(!showThisWeek)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#5176FB' }}></div>
+                          <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
+                            Tento týždeň ({displayTodos.thisWeek.length})
+                          </h2>
+                        </div>
+                        <button className="text-2xl" style={{ color: '#10122F' }}>
+                          {showThisWeek ? '−' : '+'}
+                        </button>
                       </div>
-                      <div className="space-y-3">
-                        {displayTodos.thisWeek.map(todo => <TodoItem key={todo.id} todo={todo} />)}
-                      </div>
+                      {showThisWeek && (
+                        <div className="space-y-3">
+                          {displayTodos.thisWeek.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                        </div>
+                      )}
                     </div>
                   )}
                   
                   {displayTodos.nextWeek.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#4d7cff' }}></div>
-                        <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
-                          Ďalší týždeň
-                        </h2>
+                      <div 
+                        className="flex items-center justify-between mb-4 cursor-pointer hover:opacity-80 transition-all"
+                        onClick={() => setShowNextWeek(!showNextWeek)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#4d7cff' }}></div>
+                          <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
+                            Ďalší týždeň ({displayTodos.nextWeek.length})
+                          </h2>
+                        </div>
+                        <button className="text-2xl" style={{ color: '#10122F' }}>
+                          {showNextWeek ? '−' : '+'}
+                        </button>
                       </div>
-                      <div className="space-y-3">
-                        {displayTodos.nextWeek.map(todo => <TodoItem key={todo.id} todo={todo} />)}
-                      </div>
+                      {showNextWeek && (
+                        <div className="space-y-3">
+                          {displayTodos.nextWeek.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                        </div>
+                      )}
                     </div>
                   )}
                   
                   {displayTodos.later.length > 0 && (
                     <div>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#da7aff' }}></div>
-                        <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
-                          Neskôr
-                        </h2>
+                      <div 
+                        className="flex items-center justify-between mb-4 cursor-pointer hover:opacity-80 transition-all"
+                        onClick={() => setShowLater(!showLater)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#da7aff' }}></div>
+                          <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
+                            Neskôr ({displayTodos.later.length})
+                          </h2>
+                        </div>
+                        <button className="text-2xl" style={{ color: '#10122F' }}>
+                          {showLater ? '−' : '+'}
+                        </button>
                       </div>
-                      <div className="space-y-3">
-                        {displayTodos.later.map(todo => <TodoItem key={todo.id} todo={todo} />)}
-                      </div>
+                      {showLater && (
+                        <div className="space-y-3">
+                          {displayTodos.later.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                        </div>
+                      )}
                     </div>
                   )}
                   
                   {displayTodos.someday.length > 0 && (
                     <div className="pt-6 border-t-2" style={{ borderColor: '#f0f3fc' }}>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#7C799A' }}></div>
-                        <h2 className="text-xl font-bold" style={{ color: '#7C799A' }}>
-                          Niekedy
-                        </h2>
+                      <div 
+                        className="flex items-center justify-between mb-4 cursor-pointer hover:opacity-80 transition-all"
+                        onClick={() => setShowSomeday(!showSomeday)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#7C799A' }}></div>
+                          <h2 className="text-xl font-bold" style={{ color: '#7C799A' }}>
+                            Niekedy ({displayTodos.someday.length})
+                          </h2>
+                        </div>
+                        <button className="text-2xl" style={{ color: '#7C799A' }}>
+                          {showSomeday ? '−' : '+'}
+                        </button>
                       </div>
-                      <div className="space-y-3">
-                        {displayTodos.someday.map(todo => <TodoItem key={todo.id} todo={todo} />)}
-                      </div>
+                      {showSomeday && (
+                        <div className="space-y-3">
+                          {displayTodos.someday.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                        </div>
+                      )}
                     </div>
                   )}
 
