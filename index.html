@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Moje úlohy</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    function TodoApp() {
+      const [showStats, setShowStats] = useState(false);
+      const [todos, setTodos] = useState([]);
+      const [newTask, setNewTask] = useState('');
+      const [newDate, setNewDate] = useState('');
+      const [newDateType, setNewDateType] = useState('specific');
+      const [newPriority, setNewPriority] = useState('less-urgent');
+      const [newStatus, setNewStatus] = useState('none');
+      const [editingId, setEditingId] = useState(null);
+      const [editingFullMode, setEditingFullMode] = useState(false);
+      const [editTask, setEditTask] = useState('');
+      const [editDate, setEditDate] = useState('');
+      const [editDateType, setEditDateType] = useState('specific');
+      const [editPriority, setEditPriority] = useState('less-urgent');
+      const [editStatus, setEditStatus] = useState('none');
+
+      useEffect(() => {
+        loadTodos();
+      }, []);
+
+      useEffect(() => {
+        if (todos.length >= 0) saveTodos();
+      }, [todos]);
+
+      const loadTodos = () => {
+        try {
+          const stored = localStorage.getItem('todos-list');
+          if (stored) {
+            const loadedTodos = JSON.parse(stored);
+            const migratedTodos = loadedTodos.map(todo => ({
+              ...todo,
+              dateType: todo.dateType || 'specific',
+              dateLabel: todo.dateLabel || null,
+              completedAt: todo.completedAt || null,
+              status: todo.status || 'none'
+            }));
+            setTodos(migratedTodos);
+          }
+        } catch (error) {
+          console.log('No saved todos yet');
+        }
+      };
+
+      const saveTodos = () => {
+        try {
+          localStorage.setItem('todos-list', JSON.stringify(todos));
+        } catch (error) {
+          console.error('Failed to save todos:', error);
+        }
+      };
+
+      const getStats = () => {
+        const completed = todos.filter(t => t.completed);
+        const now = new Date();
+        
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const completedToday = completed.filter(t => {
+          if (!t.completedAt) return false;
+          const completedDate = new Date(t.completedAt);
+          return completedDate >= todayStart;
+        }).length;
+        
+        const weekAgo = new Date(now);
+        weekAgo.setDate(now.getDate() - 7);
+        const completedThisWeek = completed.filter(t => {
+          if (!t.completedAt) return false;
+          const completedDate = new Date(t.completedAt);
+          return completedDate >= weekAgo;
+        }).length;
+        
+        const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const completedThisMonth = completed.filter(t => {
+          if (!t.completedAt) return false;
+          const completedDate = new Date(t.completedAt);
+          return completedDate >= monthStart;
+        }).length;
+        
+        return {
+          today: completedToday,
+          week: completedThisWeek,
+          month: completedThisMonth,
+          total: completed.length
+        };
+      };
+
+      const addTodo = () => {
+        if (!newTask.trim()) return;
+        
+        let finalDate;
+        let dateLabel;
+        
+        switch(newDateType) {
+          case 'today':
+            finalDate = new Date().toISOString().split('T')[0];
+            dateLabel = 'Dnes';
+            break;
+          case 'week':
+            finalDate = 'this-week';
+            dateLabel = 'Tento týždeň';
+            break;
+          case 'someday':
+            finalDate = 'someday';
+            dateLabel = 'Niekedy';
+            break;
+          case 'specific':
+          default:
+            finalDate = newDate || new Date().toISOString().split('T')[0];
+            dateLabel = null;
+            break;
+        }
+        
+        const todo = {
+          id: Date.now(),
+          task: newTask,
+          date: finalDate,
+          dateLabel: dateLabel,
+          dateType: newDateType,
+          priority: newPriority,
+          status: newStatus,
+          completed: false,
+          completedAt: null,
+          order: todos.length
+        };
+        
+        setTodos([...todos, todo]);
+        setNewTask('');
+        setNewDate('');
+        setNewDateType('specific');
+        setNewPriority('less-urgent');
+        setNewStatus('none');
+      };
+
+      const startEdit = (todo) => {
+        setEditingId(todo.id);
+        setEditTask(todo.task);
+      };
+
+      const startFullEdit = (todo) => {
+        setEditingId(todo.id);
+        setEditingFullMode(true);
+        setEditTask(todo.task);
+        setEditDate(todo.dateType === 'specific' || !todo.dateType ? todo.date : '');
+        setEditDateType(todo.dateType || 'specific');
+        setEditPriority(todo.priority || 'less-urgent');
+        setEditStatus(todo.status || 'none');
+      };
+
+      const saveFullEdit = () => {
+        if (!editTask.trim()) return;
+        
+        let finalDate;
+        let dateLabel;
+        
+        switch(editDateType) {
+          case 'today':
+            finalDate = new Date().toISOString().split('T')[0];
+            dateLabel = 'Dnes';
+            break;
+          case 'week':
+            finalDate = 'this-week';
+            dateLabel = 'Tento týždeň';
+            break;
+          case 'someday':
+            finalDate = 'someday';
+            dateLabel = 'Niekedy';
+            break;
+          case 'specific':
+          default:
+            finalDate = editDate;
+            dateLabel = null;
+            break;
+        }
+        
+        setTodos(todos.map(t => 
+          t.id === editingId 
+            ? { ...t, task: editTask, date: finalDate, dateLabel: dateLabel, dateType: editDateType, priority: editPriority, status: editStatus }
+            : t
+        ));
+        cancelEdit();
+      };
+
+      const cancelEdit = () => {
+        setEditingId(null);
+        setEditingFullMode(false);
+        setEditTask('');
+        setEditDate('');
+        setEditDateType('specific');
+        setEditPriority('less-urgent');
+        setEditStatus('none');
+      };
+
+      const saveTaskName = (id, newTaskName) => {
+        if (!newTaskName.trim()) return;
+        setTodos(todos.map(t => 
+          t.id === id ? { ...t, task: newTaskName } : t
+        ));
+        setEditingId(null);
+      };
+
+      const quickChangeDate = (id, dateType) => {
+        let finalDate;
+        let dateLabel;
+        
+        switch(dateType) {
+          case 'today':
+            finalDate = new Date().toISOString().split('T')[0];
+            dateLabel = 'Dnes';
+            break;
+          case 'week':
+            finalDate = 'this-week';
+            dateLabel = 'Tento týždeň';
+            break;
+          case 'someday':
+            finalDate = 'someday';
+            dateLabel = 'Niekedy';
+            break;
+          default:
+            return;
+        }
+        
+        setTodos(todos.map(t => 
+          t.id === id ? { ...t, date: finalDate, dateLabel: dateLabel, dateType: dateType } : t
+        ));
+      };
+
+      const changeStatus = (id, newStatus) => {
+        setTodos(todos.map(t => 
+          t.id === id ? { ...t, status: newStatus } : t
+        ));
+      };
+
+      const toggleComplete = (id) => {
+        setTodos(todos.map(t => {
+          if (t.id === id) {
+            return {
+              ...t,
+              completed: !t.completed,
+              completedAt: !t.completed ? new Date().toISOString() : null
+            };
+          }
+          return t;
+        }));
+      };
+
+      const deleteTodo = (id) => {
+        setTodos(todos.filter(t => t.id !== id));
+      };
+
+      const changePriority = (id, newPriority) => {
+        setTodos(todos.map(t => 
+          t.id === id ? { ...t, priority: newPriority } : t
+        ));
+      };
+
+      const isThisWeek = (dateStr) => {
+        if (dateStr === 'this-week') return true;
+        const date = new Date(dateStr);
+        const today = new Date();
+        const weekEnd = new Date(today);
+        weekEnd.setDate(today.getDate() + 7);
+        return date >= today && date <= weekEnd;
+      };
+
+      const isNextWeek = (dateStr) => {
+        const date = new Date(dateStr);
+        const today = new Date();
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() + 8);
+        const weekEnd = new Date(today);
+        weekEnd.setDate(today.getDate() + 14);
+        return date >= weekStart && date <= weekEnd;
+      };
+
+      const isToday = (dateStr) => {
+        const date = new Date(dateStr);
+        const today = new Date();
+        return date.toDateString() === today.toDateString();
+      };
+
+      const getTimelineGroups = () => {
+        const groups = {
+          today: [],
+          thisWeek: [],
+          nextWeek: [],
+          later: [],
+          someday: []
+        };
+
+        todos.filter(t => !t.completed).forEach(todo => {
+          if (todo.date === 'someday') {
+            groups.someday.push(todo);
+          } else if (isToday(todo.date)) {
+            groups.today.push(todo);
+          } else if (isThisWeek(todo.date)) {
+            groups.thisWeek.push(todo);
+          } else if (isNextWeek(todo.date)) {
+            groups.nextWeek.push(todo);
+          } else {
+            groups.later.push(todo);
+          }
+        });
+
+        const priorityOrder = { high: 0, medium: 1, low: 2, 'less-urgent': 1, 'can-wait': 2, urgent: 0 };
+        const sortByPriority = (a, b) => {
+          if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+            return priorityOrder[a.priority] - priorityOrder[b.priority];
+          }
+          return new Date(a.date) - new Date(b.date);
+        };
+
+        groups.today.sort(sortByPriority);
+        groups.thisWeek.sort(sortByPriority);
+        groups.nextWeek.sort((a, b) => new Date(a.date) - new Date(b.date));
+        groups.later.sort((a, b) => new Date(a.date) - new Date(b.date));
+        groups.someday.sort(sortByPriority);
+
+        return groups;
+      };
+
+      const displayTodos = getTimelineGroups();
+
+      const formatDate = (dateStr, dateLabel) => {
+        if (dateLabel) return dateLabel;
+        
+        if (dateStr === 'this-week') return 'Tento týždeň';
+        if (dateStr === 'someday') return 'Niekedy';
+        
+        const date = new Date(dateStr);
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        
+        if (date.toDateString() === today.toDateString()) return 'Dnes';
+        if (date.toDateString() === tomorrow.toDateString()) return 'Zajtra';
+        
+        return date.toLocaleDateString('sk-SK', { day: 'numeric', month: 'short' });
+      };
+
+      const stats = getStats();
+
+      const TodoItem = ({ todo }) => (
+        <div
+          className={`group flex items-start gap-4 p-5 rounded-xl border transition-all duration-300 ${
+            editingId === todo.id
+              ? 'bg-white border-blue-400 shadow-xl scale-105'
+              : todo.completed 
+                ? 'bg-gray-50 border-gray-200 opacity-50' 
+                : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-md cursor-pointer'
+          }`}
+          style={{
+            borderColor: editingId === todo.id ? '#5176FB' : undefined
+          }}
+        >
+          <button
+            onClick={() => toggleComplete(todo.id)}
+            className={`mt-1 w-7 h-7 rounded-lg border-2 flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
+              todo.completed 
+                ? 'bg-green-500 border-green-500 shadow-md' 
+                : 'border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+            }`}
+          >
+            {todo.completed && <span className="text-white text-lg">✓</span>}
+          </button>
+          
+          {editingId === todo.id && editingFullMode ? (
+            <div className="flex-1 space-y-3">
+              <input
+                type="text"
+                value={editTask}
+                onChange={(e) => setEditTask(e.target.value)}
+                className="w-full px-4 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                style={{ color: '#10122F' }}
+                autoFocus
+              />
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  onClick={() => setEditDateType('today')}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                    editDateType === 'today'
+                      ? 'text-white shadow-md'
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                  style={{
+                    backgroundColor: editDateType === 'today' ? '#5176FB' : undefined,
+                    color: editDateType === 'today' ? '#FFFFFF' : '#7C799A'
+                  }}
+                >
+                  📅 Dnes
+                </button>
+                <button
+                  onClick={() => setEditDateType('week')}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                    editDateType === 'week'
+                      ? 'text-white shadow-md'
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                  style={{
+                    backgroundColor: editDateType === 'week' ? '#5176FB' : undefined,
+                    color: editDateType === 'week' ? '#FFFFFF' : '#7C799A'
+                  }}
+                >
+                  📆 Týždeň
+                </button>
+                <button
+                  onClick={() => setEditDateType('someday')}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                    editDateType === 'someday'
+                      ? 'text-white shadow-md'
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                  style={{
+                    backgroundColor: editDateType === 'someday' ? '#5176FB' : undefined,
+                    color: editDateType === 'someday' ? '#FFFFFF' : '#7C799A'
+                  }}
+                >
+                  ☁️ Niekedy
+                </button>
+                <button
+                  onClick={() => setEditDateType('specific')}
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
+                    editDateType === 'specific'
+                      ? 'text-white shadow-md'
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                  style={{
+                    backgroundColor: editDateType === 'specific' ? '#5176FB' : undefined,
+                    color: editDateType === 'specific' ? '#FFFFFF' : '#7C799A'
+                  }}
+                >
+                  🗓️ Dátum
+                </button>
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {editDateType === 'specific' && (
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="flex-1 min-w-[150px] px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    style={{ color: '#10122F' }}
+                  />
+                )}
+                <select
+                  value={editPriority}
+                  onChange={(e) => setEditPriority(e.target.value)}
+                  className="px-4 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  style={{ color: '#10122F' }}
+                >
+                  <option value="urgent">🔥 Urgent</option>
+                  <option value="less-urgent">⚡ Less urgent</option>
+                  <option value="can-wait">✨ Can wait</option>
+                </select>
+                <select
+                  value={editStatus}
+                  onChange={(e) => setEditStatus(e.target.value)}
+                  className="px-4 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  style={{ color: '#10122F' }}
+                >
+                  <option value="none">—</option>
+                  <option value="working">🔨 Working on it</option>
+                  <option value="waiting">⏳ Waiting</option>
+                  <option value="stuck">🚧 Stuck</option>
+                </select>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={saveFullEdit}
+                  className="px-4 py-2 text-white rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
+                  style={{ backgroundColor: '#4d7cff' }}
+                >
+                  💾 Uložiť
+                </button>
+                <button
+                  onClick={cancelEdit}
+                  className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all flex items-center gap-2"
+                  style={{ color: '#7C799A' }}
+                >
+                  ✕ Zrušiť
+                </button>
+              </div>
+            </div>
+          ) : editingId === todo.id ? (
+            <div className="flex-1">
+              <input
+                type="text"
+                value={editTask}
+                onChange={(e) => setEditTask(e.target.value)}
+                onBlur={() => saveTaskName(todo.id, editTask)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    saveTaskName(todo.id, editTask);
+                  }
+                }}
+                className="w-full px-4 py-2 bg-gray-50 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
+                style={{ color: '#10122F' }}
+                autoFocus
+              />
+            </div>
+          ) : (
+            <>
+              <div 
+                className="flex-1 min-w-0"
+                onClick={() => !todo.completed && startEdit(todo)}
+              >
+                <p className={`font-medium text-lg ${todo.completed ? 'line-through' : ''}`}
+                   style={{ color: todo.completed ? '#7C799A' : '#10122F' }}>
+                  {todo.task}
+                </p>
+                <div className="flex gap-3 mt-2 flex-wrap items-center">
+                  <div className="flex gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        quickChangeDate(todo.id, 'today');
+                      }}
+                      className={`px-2 py-1 rounded text-xs transition-all ${
+                        todo.dateType === 'today' || isToday(todo.date)
+                          ? 'text-white shadow-md'
+                          : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      style={{
+                        backgroundColor: (todo.dateType === 'today' || isToday(todo.date)) ? '#5176FB' : undefined,
+                        color: (todo.dateType === 'today' || isToday(todo.date)) ? '#FFFFFF' : '#7C799A'
+                      }}
+                    >
+                      📅 Dnes
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        quickChangeDate(todo.id, 'week');
+                      }}
+                      className={`px-2 py-1 rounded text-xs transition-all ${
+                        todo.dateType === 'week'
+                          ? 'text-white shadow-md'
+                          : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      style={{
+                        backgroundColor: todo.dateType === 'week' ? '#5176FB' : undefined,
+                        color: todo.dateType === 'week' ? '#FFFFFF' : '#7C799A'
+                      }}
+                    >
+                      📆 Týždeň
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        quickChangeDate(todo.id, 'someday');
+                      }}
+                      className={`px-2 py-1 rounded text-xs transition-all ${
+                        todo.dateType === 'someday'
+                          ? 'text-white shadow-md'
+                          : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      style={{
+                        backgroundColor: todo.dateType === 'someday' ? '#5176FB' : undefined,
+                        color: todo.dateType === 'someday' ? '#FFFFFF' : '#7C799A'
+                      }}
+                    >
+                      ☁️ Niekedy
+                    </button>
+                  </div>
+                  {todo.status && todo.status !== 'none' && (
+                    <span className="text-xs px-2 py-1 rounded flex items-center gap-1" style={{
+                      backgroundColor: todo.status === 'working' ? '#e9eeff' : todo.status === 'waiting' ? '#FFF5E6' : '#FFE9E9',
+                      color: todo.status === 'working' ? '#5176FB' : todo.status === 'waiting' ? '#da7aff' : '#F16475'
+                    }}>
+                      {todo.status === 'working' ? '🔨 Working on it' : todo.status === 'waiting' ? '⏳ Waiting' : '🚧 Stuck'}
+                    </span>
+                  )}
+                  {todo.completed && todo.completedAt && (
+                    <span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 flex items-center gap-1">
+                      ✓ Dokončené {new Date(todo.completedAt).toLocaleDateString('sk-SK', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                  {!todo.completed && (
+                    <div className="flex gap-1">
+                      {['urgent', 'less-urgent', 'can-wait'].map(p => (
+                        <button
+                          key={p}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            changePriority(todo.id, p);
+                          }}
+                          className={`px-3 py-1 rounded-lg text-xs font-medium transition-all duration-300 ${
+                            todo.priority === p
+                              ? 'text-white shadow-md scale-110'
+                              : 'bg-gray-100 hover:bg-gray-200'
+                          }`}
+                          style={{
+                            backgroundColor: todo.priority === p ? (p === 'urgent' || p === 'high' ? '#F16475' : p === 'less-urgent' || p === 'medium' ? '#da7aff' : '#4d7cff') : undefined,
+                            color: todo.priority === p ? '#FFFFFF' : '#7C799A'
+                          }}
+                        >
+                          {p === 'urgent' || p === 'high' ? '🔥' : p === 'less-urgent' || p === 'medium' ? '⚡' : '✨'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {!todo.completed && (
+                    <div className="flex gap-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          changeStatus(todo.id, todo.status === 'working' ? 'none' : 'working');
+                        }}
+                        className={`px-2 py-1 rounded text-xs transition-all ${
+                          todo.status === 'working' ? 'shadow-md' : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
+                        style={{
+                          backgroundColor: todo.status === 'working' ? '#5176FB' : undefined,
+                          color: todo.status === 'working' ? '#FFFFFF' : '#7C799A'
+                        }}
+                      >
+                        🔨
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          changeStatus(todo.id, todo.status === 'waiting' ? 'none' : 'waiting');
+                        }}
+                        className={`px-2 py-1 rounded text-xs transition-all ${
+                          todo.status === 'waiting' ? 'shadow-md' : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
+                        style={{
+                          backgroundColor: todo.status === 'waiting' ? '#da7aff' : undefined,
+                          color: todo.status === 'waiting' ? '#FFFFFF' : '#7C799A'
+                        }}
+                      >
+                        ⏳
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          changeStatus(todo.id, todo.status === 'stuck' ? 'none' : 'stuck');
+                        }}
+                        className={`px-2 py-1 rounded text-xs transition-all ${
+                          todo.status === 'stuck' ? 'shadow-md' : 'bg-gray-100 hover:bg-gray-200'
+                        }`}
+                        style={{
+                          backgroundColor: todo.status === 'stuck' ? '#F16475' : undefined,
+                          color: todo.status === 'stuck' ? '#FFFFFF' : '#7C799A'
+                        }}
+                      >
+                        🚧
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startFullEdit(todo);
+                  }}
+                  className="text-gray-400 hover:text-blue-500 transition-all duration-300 hover:scale-125"
+                >
+                  ✏️
+                </button>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deleteTodo(todo.id);
+                  }}
+                  className="text-gray-400 hover:text-red-400 transition-all duration-300 hover:scale-125"
+                >
+                  🗑️
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      );
+
+      return (
+        <div className="min-h-screen p-4" style={{ background: 'linear-gradient(135deg, #EAEEFC 0%, #f9fcfe 100%)' }}>
+          <div className="max-w-5xl mx-auto">
+            <div className="bg-white rounded-3xl shadow-lg p-8 mb-6 border" style={{ borderColor: '#f0f3fc' }}>
+              <h1 className="text-4xl font-bold mb-8 tracking-tight" style={{ color: '#10122F' }}>
+                ✨ Moje úlohy
+              </h1>
+
+              {showStats && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                  <div className="rounded-xl p-4 border-2" style={{ backgroundColor: '#EAEEFC', borderColor: '#F16475' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">🏆</span>
+                      <span className="text-sm font-medium" style={{ color: '#7C799A' }}>Dnes</span>
+                    </div>
+                    <p className="text-3xl font-bold" style={{ color: '#10122F' }}>{stats.today}</p>
+                  </div>
+                  
+                  <div className="rounded-xl p-4 border-2" style={{ backgroundColor: '#EAEEFC', borderColor: '#5176FB' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">📈</span>
+                      <span className="text-sm font-medium" style={{ color: '#7C799A' }}>Tento týždeň</span>
+                    </div>
+                    <p className="text-3xl font-bold" style={{ color: '#10122F' }}>{stats.week}</p>
+                  </div>
+                  
+                  <div className="rounded-xl p-4 border-2" style={{ backgroundColor: '#EAEEFC', borderColor: '#da7aff' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">📅</span>
+                      <span className="text-sm font-medium" style={{ color: '#7C799A' }}>Tento mesiac</span>
+                    </div>
+                    <p className="text-3xl font-bold" style={{ color: '#10122F' }}>{stats.month}</p>
+                  </div>
+                  
+                  <div className="rounded-xl p-4 border-2" style={{ backgroundColor: '#EAEEFC', borderColor: '#4d7cff' }}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xl">✓</span>
+                      <span className="text-sm font-medium" style={{ color: '#7C799A' }}>Celkovo</span>
+                    </div>
+                    <p className="text-3xl font-bold" style={{ color: '#10122F' }}>{stats.total}</p>
+                  </div>
+                </div>
+              )}
+              
+              <div className="flex gap-3 mb-8 flex-wrap">
+                <button
+                  onClick={() => setShowStats(!showStats)}
+                  className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 font-medium ${
+                    showStats ? 'text-white shadow-lg scale-105' : 'hover:bg-gray-100'
+                  }`}
+                  style={{
+                    backgroundColor: showStats ? '#4d7cff' : 'transparent',
+                    color: showStats ? '#FFFFFF' : '#7C799A'
+                  }}
+                >
+                  📊 Štatistiky
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  value={newTask}
+                  onChange={(e) => setNewTask(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+                  placeholder="Nová úloha..."
+                  className="w-full px-6 py-4 border-2 rounded-2xl focus:outline-none focus:ring-4 transition-all"
+                  style={{ 
+                    backgroundColor: '#f9fcfe',
+                    borderColor: '#f0f3fc',
+                    color: '#10122F'
+                  }}
+                />
+                <div className="flex gap-3 flex-wrap">
+                  <div className="flex gap-2 flex-wrap flex-1 min-w-[300px]">
+                    <button
+                      onClick={() => setNewDateType('today')}
+                      className={`px-4 py-2 rounded-lg transition-all ${
+                        newDateType === 'today' ? 'text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      style={{
+                        backgroundColor: newDateType === 'today' ? '#5176FB' : undefined,
+                        color: newDateType === 'today' ? '#FFFFFF' : '#7C799A'
+                      }}
+                    >
+                      📅 Dnes
+                    </button>
+                    <button
+                      onClick={() => setNewDateType('week')}
+                      className={`px-4 py-2 rounded-lg transition-all ${
+                        newDateType === 'week' ? 'text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      style={{
+                        backgroundColor: newDateType === 'week' ? '#5176FB' : undefined,
+                        color: newDateType === 'week' ? '#FFFFFF' : '#7C799A'
+                      }}
+                    >
+                      📆 Tento týždeň
+                    </button>
+                    <button
+                      onClick={() => setNewDateType('someday')}
+                      className={`px-4 py-2 rounded-lg transition-all ${
+                        newDateType === 'someday' ? 'text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      style={{
+                        backgroundColor: newDateType === 'someday' ? '#5176FB' : undefined,
+                        color: newDateType === 'someday' ? '#FFFFFF' : '#7C799A'
+                      }}
+                    >
+                      ☁️ Niekedy
+                    </button>
+                    <button
+                      onClick={() => setNewDateType('specific')}
+                      className={`px-4 py-2 rounded-lg transition-all ${
+                        newDateType === 'specific' ? 'text-white shadow-md' : 'bg-gray-100 hover:bg-gray-200'
+                      }`}
+                      style={{
+                        backgroundColor: newDateType === 'specific' ? '#5176FB' : undefined,
+                        color: newDateType === 'specific' ? '#FFFFFF' : '#7C799A'
+                      }}
+                    >
+                      🗓️ Konkrétny dátum
+                    </button>
+                  </div>
+                  {newDateType === 'specific' && (
+                    <input
+                      type="date"
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      className="px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all"
+                      style={{ 
+                        backgroundColor: '#f9fcfe',
+                        borderColor: '#f0f3fc',
+                        color: '#10122F'
+                      }}
+                    />
+                  )}
+                  <select
+                    value={newPriority}
+                    onChange={(e) => setNewPriority(e.target.value)}
+                    className="px-6 py-2 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all"
+                    style={{ 
+                      backgroundColor: '#f9fcfe',
+                      borderColor: '#f0f3fc',
+                      color: '#10122F'
+                    }}
+                  >
+                    <option value="urgent">🔥 Urgent</option>
+                    <option value="less-urgent">⚡ Less urgent</option>
+                    <option value="can-wait">✨ Can wait</option>
+                  </select>
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="px-6 py-2 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all"
+                    style={{ 
+                      backgroundColor: '#f9fcfe',
+                      borderColor: '#f0f3fc',
+                      color: '#10122F'
+                    }}
+                  >
+                    <option value="none">—</option>
+                    <option value="working">🔨 Working on it</option>
+                    <option value="waiting">⏳ Waiting</option>
+                    <option value="stuck">🚧 Stuck</option>
+                  </select>
+                  <button
+                    onClick={addTodo}
+                    className="px-8 py-2 text-white rounded-xl hover:shadow-xl transition-all duration-300 flex items-center gap-2 font-medium"
+                    style={{ backgroundColor: '#4d7cff' }}
+                  >
+                    ➕ Pridať
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl shadow-lg p-8 border" style={{ borderColor: '#f0f3fc' }}>
+              {todos.length === 0 ? (
+                <div className="text-center py-20" style={{ color: '#7C799A' }}>
+                  <span className="text-6xl mb-4 block">⏰</span>
+                  <p className="text-xl font-medium">Zatiaľ žiadne úlohy</p>
+                  <p className="text-sm mt-2">Pridaj svoju prvú úlohu a poď do toho! 🚀</p>
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {displayTodos.today.length > 0 && (
+                    <div className="p-5 rounded-2xl" style={{ backgroundColor: '#FFF5F5' }}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#F16475' }}></div>
+                        <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
+                          Dnes
+                        </h2>
+                      </div>
+                      <div className="space-y-3">
+                        {displayTodos.today.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {displayTodos.thisWeek.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#5176FB' }}></div>
+                        <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
+                          Tento týždeň
+                        </h2>
+                      </div>
+                      <div className="space-y-3">
+                        {displayTodos.thisWeek.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {displayTodos.nextWeek.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#4d7cff' }}></div>
+                        <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
+                          Ďalší týždeň
+                        </h2>
+                      </div>
+                      <div className="space-y-3">
+                        {displayTodos.nextWeek.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {displayTodos.later.length > 0 && (
+                    <div>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#da7aff' }}></div>
+                        <h2 className="text-xl font-bold" style={{ color: '#10122F' }}>
+                          Neskôr
+                        </h2>
+                      </div>
+                      <div className="space-y-3">
+                        {displayTodos.later.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {displayTodos.someday.length > 0 && (
+                    <div className="pt-6 border-t-2" style={{ borderColor: '#f0f3fc' }}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#7C799A' }}></div>
+                        <h2 className="text-xl font-bold" style={{ color: '#7C799A' }}>
+                          Niekedy
+                        </h2>
+                      </div>
+                      <div className="space-y-3">
+                        {displayTodos.someday.map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                      </div>
+                    </div>
+                  )}
+
+                  {todos.filter(t => t.completed).length > 0 && (
+                    <div className="pt-6 border-t-2" style={{ borderColor: '#f0f3fc' }}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <h2 className="text-xl font-bold" style={{ color: '#7C799A' }}>
+                          Dokončené
+                        </h2>
+                      </div>
+                      <div className="space-y-3">
+                        {todos.filter(t => t.completed).map(todo => <TodoItem key={todo.id} todo={todo} />)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<TodoApp />, document.getElementById('root'));
+  </script>
+</body>
+</html>
