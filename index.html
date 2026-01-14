@@ -607,6 +607,16 @@
                       ☁️ Niekedy
                     </button>
                   </div>
+                  
+                  {todo.dateType === 'specific' && todo.date && (
+                    <span className="text-xs px-2 py-1 rounded flex items-center gap-1" style={{
+                      backgroundColor: '#e9eeff',
+                      color: '#5176FB'
+                    }}>
+                      📅 {formatDate(todo.date, todo.dateLabel)}
+                    </span>
+                  )}
+                  
                   {todo.status && todo.status !== 'none' && (
                     <span className="text-xs px-2 py-1 rounded flex items-center gap-1" style={{
                       backgroundColor: todo.status === 'working' ? '#e9eeff' : todo.status === 'waiting' ? '#FFF5E6' : '#FFE9E9',
