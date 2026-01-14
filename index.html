@@ -52,7 +52,7 @@
 
       const loadTodos = async () => {
         try {
-          const response = await fetch('/.netlify/functions/todos');
+          const response = await fetch('/api/todos');
           if (response.ok) {
             const loadedTodos = await response.json();
             const migratedTodos = loadedTodos.map(todo => ({
@@ -72,7 +72,7 @@
       const saveTodos = async () => {
         setIsSaving(true);
         try {
-          await fetch('/.netlify/functions/todos', {
+          await fetch('/api/todos', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(todos)
