@@ -30,7 +30,6 @@
       const [editingId, setEditingId] = useState(null);
       const [editingFullMode, setEditingFullMode] = useState(false);
       const [showDatePicker, setShowDatePicker] = useState(null);
-      const [tempDate, setTempDate] = useState('');
       const [editTask, setEditTask] = useState('');
       const [editDate, setEditDate] = useState('');
       const [editDateType, setEditDateType] = useState('specific');
@@ -233,19 +232,11 @@
         setEditingId(null);
       };
 
-      const openDatePicker = (todo) => {
-        setShowDatePicker(todo.id);
-        setTempDate(todo.date);
-      };
-
-      const saveDateChange = () => {
-        if (tempDate && showDatePicker) {
-          setTodos(todos.map(t => 
-            t.id === showDatePicker ? { ...t, date: tempDate, dateLabel: null, dateType: 'specific' } : t
-          ));
-        }
+      const quickChangeDateSpecific = (id, date) => {
+        setTodos(todos.map(t => 
+          t.id === id ? { ...t, date: date, dateLabel: null, dateType: 'specific' } : t
+        ));
         setShowDatePicker(null);
-        setTempDate('');
       };
 
       const quickChangeDate = (id, dateType) => {
@@ -672,7 +663,7 @@
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        openDatePicker(todo);
+                        setShowDatePicker(showDatePicker === todo.id ? null : todo.id);
                       }}
                       className="text-xs px-2 py-1 rounded flex items-center gap-1 hover:shadow-md transition-all"
                       style={{
@@ -698,43 +689,33 @@
                         </label>
                         <input
                           type="date"
-                          defaultValue={tempDate}
-                          onInput={(e) => setTempDate(e.target.value)}
+                          defaultValue={todo.date}
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              quickChangeDateSpecific(todo.id, e.target.value);
+                            }
+                          }}
                           className="w-full px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-lg"
                           style={{ 
                             backgroundColor: '#f9fcfe',
                             borderColor: '#5176FB',
                             color: '#10122F'
                           }}
-                          autoFocus
                         />
                       </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            saveDateChange();
-                          }}
-                          className="flex-1 px-4 py-2 rounded-lg transition-all font-medium"
-                          style={{
-                            backgroundColor: '#5176FB',
-                            color: '#FFFFFF'
-                          }}
-                        >
-                          Uložiť
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setShowDatePicker(null);
-                            setTempDate('');
-                          }}
-                          className="px-4 py-2 rounded-lg transition-all font-medium bg-gray-100"
-                          style={{ color: '#7C799A' }}
-                        >
-                          Zrušiť
-                        </button>
-                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowDatePicker(null);
+                        }}
+                        className="w-full px-4 py-2 rounded-lg transition-all font-medium"
+                        style={{
+                          backgroundColor: '#5176FB',
+                          color: '#FFFFFF'
+                        }}
+                      >
+                        Zavrieť
+                      </button>
                     </div>
                   )}
                   
