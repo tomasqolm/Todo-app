@@ -283,13 +283,20 @@
       };
 
       const isNextWeek = (dateStr) => {
+        if (dateStr === 'someday' || dateStr === 'this-week') return false;
+        
         const date = new Date(dateStr);
         const today = new Date();
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() + 8);
-        const weekEnd = new Date(today);
-        weekEnd.setDate(today.getDate() + 14);
-        return date >= weekStart && date <= weekEnd;
+        today.setHours(0, 0, 0, 0);
+        
+        const thisWeekEnd = new Date(today);
+        thisWeekEnd.setDate(today.getDate() + 7);
+        
+        const nextWeekEnd = new Date(today);
+        nextWeekEnd.setDate(today.getDate() + 14);
+        
+        // Dátum je medzi 8. a 14. dňom od dnes
+        return date > thisWeekEnd && date <= nextWeekEnd;
       };
 
       const isToday = (dateStr) => {
