@@ -289,14 +289,20 @@
         
         const date = new Date(dateStr);
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
         
-        const thisWeekEnd = new Date(today);
-        thisWeekEnd.setDate(today.getDate() + 7);
-        thisWeekEnd.setHours(23, 59, 59, 999);
+        // Zisti zaciatok a koniec aktualneho tyzdna (pondelok-nedela)
+        const currentDay = today.getDay(); // 0 = nedela, 1 = pondelok, ...
+        const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay; // Offset na pondelok
         
-        // Dátum je medzi dnes a 7 dní (vrátane)
-        return date >= today && date <= thisWeekEnd;
+        const thisMonday = new Date(today);
+        thisMonday.setDate(today.getDate() + mondayOffset);
+        thisMonday.setHours(0, 0, 0, 0);
+        
+        const thisSunday = new Date(thisMonday);
+        thisSunday.setDate(thisMonday.getDate() + 6);
+        thisSunday.setHours(23, 59, 59, 999);
+        
+        return date >= thisMonday && date <= thisSunday;
       };
 
       const isNextWeek = (dateStr) => {
@@ -304,18 +310,20 @@
         
         const date = new Date(dateStr);
         const today = new Date();
-        today.setHours(0, 0, 0, 0);
         
-        const thisWeekEnd = new Date(today);
-        thisWeekEnd.setDate(today.getDate() + 7);
-        thisWeekEnd.setHours(23, 59, 59, 999);
+        // Zisti zaciatok a koniec budúceho tyzdna
+        const currentDay = today.getDay();
+        const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay;
         
-        const nextWeekEnd = new Date(today);
-        nextWeekEnd.setDate(today.getDate() + 14);
-        nextWeekEnd.setHours(23, 59, 59, 999);
+        const nextMonday = new Date(today);
+        nextMonday.setDate(today.getDate() + mondayOffset + 7); // Pribudúci pondelok
+        nextMonday.setHours(0, 0, 0, 0);
         
-        // Dátum je medzi 8. a 14. dňom od dnes
-        return date > thisWeekEnd && date <= nextWeekEnd;
+        const nextSunday = new Date(nextMonday);
+        nextSunday.setDate(nextMonday.getDate() + 6);
+        nextSunday.setHours(23, 59, 59, 999);
+        
+        return date >= nextMonday && date <= nextSunday;
       };
 
       const isToday = (dateStr) => {
