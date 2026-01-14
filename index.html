@@ -582,67 +582,13 @@
               </div>
               <div className="flex gap-2 flex-wrap">
                 {editDateType === 'specific' && (
-                  <div className="flex gap-2 items-center">
-                    <input
-                      type="number"
-                      min="1"
-                      max="31"
-                      placeholder="DD"
-                      value={editDate ? new Date(editDate).getDate() : ''}
-                      onChange={(e) => {
-                        const day = e.target.value.padStart(2, '0');
-                        const currentDate = editDate ? new Date(editDate) : new Date();
-                        const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-                        const year = currentDate.getFullYear();
-                        if (e.target.value && e.target.value >= 1 && e.target.value <= 31) {
-                          setEditDate(`${year}-${month}-${day}`);
-                        }
-                      }}
-                      className="w-16 px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-center"
-                      style={{ color: '#10122F' }}
-                    />
-                    <span style={{ color: '#7C799A' }}>/</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="12"
-                      placeholder="MM"
-                      value={editDate ? new Date(editDate).getMonth() + 1 : ''}
-                      onChange={(e) => {
-                        const month = e.target.value.padStart(2, '0');
-                        const currentDate = editDate ? new Date(editDate) : new Date();
-                        const day = String(currentDate.getDate()).padStart(2, '0');
-                        const year = currentDate.getFullYear();
-                        if (e.target.value && e.target.value >= 1 && e.target.value <= 12) {
-                          setEditDate(`${year}-${month}-${day}`);
-                        }
-                      }}
-                      className="w-16 px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-center"
-                      style={{ color: '#10122F' }}
-                    />
-                    <span style={{ color: '#7C799A' }}>/</span>
-                    <input
-                      type="number"
-                      min="0"
-                      max="99"
-                      placeholder="YY"
-                      value={editDate ? String(new Date(editDate).getFullYear()).slice(-2) : ''}
-                      onChange={(e) => {
-                        if (e.target.value.length <= 2) {
-                          const yearShort = e.target.value.padStart(2, '0');
-                          const year = yearShort.length === 2 ? `20${yearShort}` : '2025';
-                          const currentDate = editDate ? new Date(editDate) : new Date();
-                          const day = String(currentDate.getDate()).padStart(2, '0');
-                          const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-                          if (e.target.value && e.target.value >= 0) {
-                            setEditDate(`${year}-${month}-${day}`);
-                          }
-                        }
-                      }}
-                      className="w-16 px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 text-center"
-                      style={{ color: '#10122F' }}
-                    />
-                  </div>
+                  <input
+                    type="date"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="flex-1 min-w-[150px] px-3 py-2 bg-gray-50 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    style={{ color: '#10122F' }}
+                  />
                 )}
                 <select
                   value={editPriority}
@@ -1382,79 +1328,17 @@
                     </button>
                   </div>
                   {newDateType === 'specific' && (
-                    <div className="flex gap-2 items-center">
-                      <input
-                        type="number"
-                        min="1"
-                        max="31"
-                        placeholder="DD"
-                        value={newDate ? new Date(newDate).getDate() : ''}
-                        onChange={(e) => {
-                          const day = e.target.value.padStart(2, '0');
-                          const currentDate = newDate ? new Date(newDate) : new Date();
-                          const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-                          const year = currentDate.getFullYear();
-                          if (e.target.value && e.target.value >= 1 && e.target.value <= 31) {
-                            setNewDate(`${year}-${month}-${day}`);
-                          }
-                        }}
-                        className="w-16 px-3 py-2 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-center"
-                        style={{ 
-                          backgroundColor: '#f9fcfe',
-                          borderColor: '#f0f3fc',
-                          color: '#10122F'
-                        }}
-                      />
-                      <span style={{ color: '#7C799A' }}>/</span>
-                      <input
-                        type="number"
-                        min="1"
-                        max="12"
-                        placeholder="MM"
-                        value={newDate ? new Date(newDate).getMonth() + 1 : ''}
-                        onChange={(e) => {
-                          const month = e.target.value.padStart(2, '0');
-                          const currentDate = newDate ? new Date(newDate) : new Date();
-                          const day = String(currentDate.getDate()).padStart(2, '0');
-                          const year = currentDate.getFullYear();
-                          if (e.target.value && e.target.value >= 1 && e.target.value <= 12) {
-                            setNewDate(`${year}-${month}-${day}`);
-                          }
-                        }}
-                        className="w-16 px-3 py-2 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-center"
-                        style={{ 
-                          backgroundColor: '#f9fcfe',
-                          borderColor: '#f0f3fc',
-                          color: '#10122F'
-                        }}
-                      />
-                      <span style={{ color: '#7C799A' }}>/</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max="99"
-                        placeholder="YY"
-                        value={newDate ? String(new Date(newDate).getFullYear()).slice(-2) : ''}
-                        onChange={(e) => {
-                          if (e.target.value.length <= 2) {
-                            const yearShort = e.target.value.padStart(2, '0');
-                            const year = yearShort.length === 2 ? `20${yearShort}` : '2025';
-                            const currentDate = newDate ? new Date(newDate) : new Date();
-                            const day = String(currentDate.getDate()).padStart(2, '0');
-                            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
-                            if (e.target.value && e.target.value >= 0) {
-                              setNewDate(`${year}-${month}-${day}`);
-                            }
-                          }
-                        }}
-                        className="w-16 px-3 py-2 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all text-center"
-                        style={{ 
-                          backgroundColor: '#f9fcfe',
-                          borderColor: '#f0f3fc',
-                          color: '#10122F'
-                        }}
-                      />
-                    </div>
+                    <input
+                      type="date"
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      className="px-4 py-2 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all"
+                      style={{ 
+                        backgroundColor: '#f9fcfe',
+                        borderColor: '#f0f3fc',
+                        color: '#10122F'
+                      }}
+                    />
                   )}
                   <select
                     value={newPriority}
