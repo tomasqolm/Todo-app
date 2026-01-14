@@ -39,11 +39,11 @@
         if (todos.length >= 0) saveTodos();
       }, [todos]);
 
-      const loadTodos = () => {
+      const loadTodos = async () => {
         try {
-          const stored = localStorage.getItem('todos-list');
-          if (stored) {
-            const loadedTodos = JSON.parse(stored);
+          const response = await fetch('/.netlify/functions/todos');
+          if (response.ok) {
+            const loadedTodos = await response.json();
             const migratedTodos = loadedTodos.map(todo => ({
               ...todo,
               dateType: todo.dateType || 'specific',
@@ -54,13 +54,17 @@
             setTodos(migratedTodos);
           }
         } catch (error) {
-          console.log('No saved todos yet');
+          console.error('Failed to load todos:', error);
         }
       };
 
-      const saveTodos = () => {
+      const saveTodos = async () => {
         try {
-          localStorage.setItem('todos-list', JSON.stringify(todos));
+          await fetch('/.netlify/functions/todos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(todos)
+          });
         } catch (error) {
           console.error('Failed to save todos:', error);
         }
